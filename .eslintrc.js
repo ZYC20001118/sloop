@@ -2,10 +2,8 @@ module.exports = {
   root: true,
 
   env: {
-      node: true
+    node: true
   },
-
-  extends: ['plugin:vue/vue3-essential', 'eslint:recommended', '@vue/prettier'],
 
   parserOptions: {
     parser: 'babel-eslint'
@@ -14,10 +12,7 @@ module.exports = {
   rules: {
     'no-console': 'off',
     'no-debugger': 'off',
-    indent: [
-      'error',
-      2
-    ],
+    indent: ['error', 2],
     'vue/valid-v-bind': 'error',
     'vue/valid-v-cloak': 'error',
     'vue/valid-v-else-if': 'error',
@@ -35,9 +30,5 @@ module.exports = {
     'vue/valid-v-is': 'error'
   },
 
-  'extends': [
-    'plugin:vue/essential',
-    'eslint:recommended',
-    '@vue/prettier'
-  ]
+  extends: ['plugin:vue/vue3-essential', 'eslint:recommended', '@vue/prettier']
 }

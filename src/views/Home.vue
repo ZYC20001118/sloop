@@ -3,21 +3,10 @@
     <a-layout-content>
       <!-- 面包屑导航 -->
       <div class="head-nav">
-        <div class="warp">
-          <a-breadcrumb :routes="routes">
-            <template #itemRender="{ route, routes }">
-              <span v-if="routes.indexOf(route) === routes.length - 1">
-                {{ route.breadcrumbName }}
-              </span>
-              <router-link v-else :to="route.path">
-                {{ route.breadcrumbName }}
-              </router-link>
-            </template>
-          </a-breadcrumb>
-        </div>
+        <head-nav class="warp" ref="refHeadNav" :title="data.title" />
       </div>
       <!-- 文件列表 -->
-      <div class="file-list" v-show="data.page == 'list'">
+      <div v-if="data.page == 'list'" class="file-list">
         <a-table
           class="warp"
           :columns="columns"
@@ -51,11 +40,15 @@
         </a-table>
       </div>
       <!-- 预览页面 -->
-      <div class="preview" v-show="data.page == 'detail'">
+      <div v-show="data.page == 'detail'" class="preview">
         <!-- 视频预览 -->
-        <div id="video-preview" v-show="data.type == 'video'"></div>
-        <!-- 图片预览 -->
-        <img v-if="data.type == 'image'" :src="data.url" />
+        <div v-show="data.type == 'video'" id="video-preview"></div>
+        <div v-if="data.type != 'video'" class="warp">
+          <!-- 图片预览 -->
+          <img v-if="data.type == 'image'" :src="data.url" />
+          <!-- 音频预览 -->
+          <audio v-if="data.type == 'audio'" :src="data.url" controls autoplay />
+        </div>
       </div>
       <!-- 自诉文件 -->
       <div v-if="data.readme" class="readme warp">
@@ -67,7 +60,7 @@
     <!-- 页脚 -->
     <a-layout-footer v-if="data.page == 'list'">
       <div class="warp">
-        <p>Powered by sharelist | Theme by lmy</p>
+        <p>Powered by sharelist | Theme by sloop</p>
         <p><a href="/manage" target="_blank">管理</a></p>
       </div>
     </a-layout-footer>
@@ -75,21 +68,23 @@
 </template>
 
 <script>
+import HeadNav from '../components/HeadNav.vue'
+
 import { getList } from '../utils/api'
 import { queryURLparams } from '../utils/base'
 import { byte } from '../utils/format'
 import { message } from 'ant-design-vue'
 import DPlayer from 'dplayer'
+import { useRoute, useRouter } from 'vue-router'
+import { reactive, watch, toRefs, ref, onMounted } from 'vue'
 
 export default {
-  watch: {
-    $route() {
-      this.updateFileList()
-    }
+  components: {
+    HeadNav
   },
   data() {
     return {
-      data: typeof window.data == 'undefined' ? [] : window.data,
+      // data: [],
       columns: [
         {
           align: 'left',
@@ -105,7 +100,7 @@ export default {
           slots: { title: 'sizeTitle', customRender: 'size' },
           width: 100,
           sorter: (a, b) => {
-            return a.size < b.size ? 1 : -1
+            return a._size < b._size ? 1 : -1
           }
         },
         {
@@ -118,98 +113,11 @@ export default {
           }
         }
       ],
-      // 文件列表加载动画
-      file_list_loading: false,
-      dplayer: null,
       // 面包屑导航路由
       routes: []
     }
   },
   methods: {
-    // 初始化
-    init() {
-      this.updateHeadNav()
-      // 销毁播放器
-      if (this.dplayer) {
-        this.dplayer.destroy()
-      }
-      // 设置标题
-      let title = 'ShareList'
-      if (this.data.subtitle) {
-        title = this.data.subtitle
-        if (this.data.title) {
-          title += ` - ${this.data.title}`
-        }
-      } else {
-        title = this.data.title
-      }
-      document.title = title
-    },
-    // 获取文件列表
-    updateFileList() {
-      this.file_list_loading = true
-      let path = this.$route.fullPath
-      if (path == undefined) {
-        path = ''
-      }
-      getList(path)
-        .then(res => {
-          let el = document.createElement('div')
-          el.innerHTML = res.data
-          let data = JSON.parse(
-            el.getElementsByTagName('script')[0].innerHTML.substr(9)
-          ) // var data=
-          this.data = data
-          this.init()
-          if (data.page == 'list') {
-            data.list = data.list.map(item => {
-              item.size = byte(item._size)
-              if (item.size == '0 B') {
-                item.size = ''
-              }
-              return item
-            })
-          } else if (data.page == 'detail') {
-            // 预览视频
-            if (data.type == 'video') {
-              this.dplayer = new DPlayer({
-                container: document.getElementById('video-preview'),
-                video: {
-                  url: data.url,
-                  type: 'auto'
-                },
-                autoplay: true
-              })
-            }
-          }
-          this.file_list_loading = false
-        })
-        .catch(res => {
-          console.log(res)
-          message.error('加载错误：' + res)
-          this.file_list_loading = false
-        })
-    },
-    // 加载面包屑导航
-    updateHeadNav() {
-      const paths = location.pathname.substr(1).split('/')
-      let routes = [
-        {
-          path: '/',
-          breadcrumbName: this.data.title
-        }
-      ]
-      paths.map(val => {
-        if (val == '') {
-          return false
-        }
-        routes.push({
-          path: routes[routes.length - 1].path + `${val}/`,
-          breadcrumbName: decodeURIComponent(val)
-        })
-      })
-      this.routes = routes
-    },
     // 设置表格行属性
     customRow(record) {
       return {
@@ -217,10 +125,8 @@ export default {
         onClick: () => {
           if (
             record.type == 'folder' ||
-            Object.prototype.hasOwnProperty.call(
-              queryURLparams(record.href),
-              'preview'
-            )
+            record.type == 'level-up' ||
+            Object.prototype.hasOwnProperty.call(queryURLparams(record.href), 'preview')
           ) {
             this.$router.push(record.href)
           } else {
@@ -230,18 +136,110 @@ export default {
       }
     }
   },
-  // 挂载页面
-  mounted() {
-    if (!Object.keys(this.data).length) {
-      this.$router.push('/404')
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
+
+    const data = reactive({
+      data: typeof window.data == 'undefined' ? [] : window.data,
+      // 文件列表加载动画
+      file_list_loading: false,
+      // 播放器
+      dplayer: null
+    })
+
+    if (data.data == []) {
+      router.push('/404')
     }
-    this.init()
+
+    // 渲染页面
+    const renderPage = () => {
+      console.log('====renderPage====渲染页面====')
+      // 销毁播放器
+      if (data.dplayer) {
+        data.dplayer.destroy()
+      }
+      // 设置标题
+      let title = 'ShareList'
+      if (data.data.subtitle) {
+        title = data.data.subtitle
+        if (data.data.title) {
+          title += ` - ${data.data.title}`
+        }
+      } else {
+        title = data.data.title
+      }
+      document.title = title
+      if (data.data.page == 'list') {
+        data.data.list = data.data.list.map(item => {
+          item.size = byte(item._size)
+          if (item.size == '0 B') {
+            item.size = ''
+          }
+          return item
+        })
+      } else if (data.data.page == 'detail') {
+        // 预览视频
+        if (data.data.type == 'video') {
+          data.dplayer = new DPlayer({
+            container: document.getElementById('video-preview'),
+            video: {
+              url: data.data.url,
+              type: 'auto'
+            },
+            autoplay: true
+          })
+        }
+      }
+    }
+    // 更新文件列表
+    const updateFileList = () => {
+      console.log('====updateFileList====更新文件列表====')
+      data.file_list_loading = true
+      let path = route.fullPath
+      if (path == undefined) {
+        path = ''
+      }
+      getList(path)
+        .then(res => {
+          let el = document.createElement('div')
+          el.innerHTML = res.data
+          let json = JSON.parse(el.getElementsByTagName('script')[0].innerHTML.substr(9)) // var data=
+          data.data = json
+          renderPage()
+          data.file_list_loading = false
+        })
+        .catch(res => {
+          console.log(res)
+          message.error(`${res}`)
+          data.file_list_loading = false
+          router.back()
+        })
+    }
+    const refHeadNav = ref(null)
+    const updateHeadNav = () => {
+      refHeadNav.value.init()
+    }
+    watch(
+      () => route.path,
+      () => {
+        updateHeadNav()
+        updateFileList()
+      }
+    )
+    onMounted(() => {
+      renderPage()
+    })
+    return {
+      ...toRefs(data),
+      refHeadNav
+    }
   }
 }
 </script>
 
 <style scoped lang="less">
-@import url('https://cdn.bootcss.com/github-markdown-css/4.0.0/github-markdown.min.css');
+@import url('https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css');
 .layout {
   background: #fff;
 }
@@ -253,28 +251,7 @@ export default {
 }
 // 面包屑导航
 .head-nav {
-  position: relative;
   background: #f5f6fa;
-  z-index: 1;
-  :hover {
-    .ant-breadcrumb {
-      overflow-x: auto;
-    }
-  }
-  ::v-deep(.ant-breadcrumb) {
-    display: flex;
-    overflow: hidden;
-    height: 56px;
-    line-height: 56px;
-    font-size: 20px;
-    span {
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      .ant-breadcrumb-separator {
-        margin: 0 4px;
-      }
-    }
-  }
 }
 .file-list {
   cursor: pointer;
@@ -321,7 +298,12 @@ export default {
   top: 0;
   height: 100%;
   padding-top: 56px;
-  text-align: center;
+  .warp {
+    padding: 15px;
+    img {
+      max-width: 100%;
+    }
+  }
   #video-preview {
     height: 100%;
   }

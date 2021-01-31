@@ -10,9 +10,5 @@ export const byte = v => {
     lo++
   }
 
-  return (
-    Math.floor(v * 100) / 100 +
-    ' ' +
-    ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'][lo]
-  )
+  return Math.floor(v * 100) / 100 + ' ' + ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'][lo]
 }

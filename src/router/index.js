@@ -2,10 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import ErrorPage404 from '../views/ErrorPage404.vue'
 
-const routerHistory = createWebHistory()
-
 const router = createRouter({
-  history: routerHistory,
+  history: createWebHistory(),
   routes: [
     {
       path: '/:path(.*)',
