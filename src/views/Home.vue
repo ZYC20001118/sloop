@@ -137,14 +137,9 @@ export default {
         data.dplayer.destroy()
       }
       // 设置标题
-      let title = 'ShareList'
+      let title = data.data.title || 'ShareList'
       if (data.data.subtitle) {
-        title = data.data.subtitle
-        if (data.data.title) {
-          title += ` - ${data.data.title}`
-        }
-      } else {
-        title = data.data.title
+        title = `${data.data.subtitle} - ${title}`
       }
       document.title = title
       if (data.data.page == 'list') {
@@ -195,26 +190,26 @@ export default {
           let div = document.createElement('div')
           div.innerHTML = res.data
           let script = div.getElementsByTagName('script')
+          let back = true
           if (script.length) {
             let json = script[0].innerHTML.substr(9)
             json = JsonParse(json)
             if (json != false) {
               data.data = json // var data=
               renderPage()
-            } else {
-              this.error = true
+              back = false
             }
-          } else {
-            this.error = true
           }
-          if (this.error) {
+          if (back) {
             router.back()
           }
           data.file_list_loading = false
+          console.log(res)
         })
         .catch(res => {
-          console.log(res)
+          console.log(res.response)
           data.file_list_loading = false
+          // router.back() // 有BUG
         })
     }
     // 表格属性
