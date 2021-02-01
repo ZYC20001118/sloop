@@ -1,5 +1,5 @@
 <template>
-  <div class="head-nav">
+  <div class="nav">
     <a-breadcrumb :routes="routes">
       <template #itemRender="{ route, routes }">
         <span v-if="routes.indexOf(route) === routes.length - 1">
@@ -10,6 +10,13 @@
         </router-link>
       </template>
     </a-breadcrumb>
+    <div class="extra">
+      <a :href="data.url" target="_blank" v-if="data.page == 'detail'">
+        <svg aria-hidden="true" focusable="false">
+          <use xlink:href="#icon-download"></use>
+        </svg>
+      </a>
+    </div>
   </div>
 </template>
 
@@ -19,18 +26,22 @@ import { reactive, toRefs } from 'vue'
 export default {
   name: 'HeadNav',
   props: {
-    title: String
+    data: Object
   },
   setup(props) {
     const data = reactive({
+      data: props.data,
       routes: []
     })
     const init = () => {
+      if (process.env.NODE_ENV === 'development') {
+        data.data = props.data
+      }
       const paths = location.pathname.substr(1).split('/')
       let routes = [
         {
           path: '/',
-          breadcrumbName: props.title
+          breadcrumbName: data.data.title
         }
       ]
       paths.map(val => {
@@ -54,25 +65,36 @@ export default {
 </script>
 
 <style scoped lang="less">
-.head-nav {
+.nav {
   position: relative;
+  display: flex;
   z-index: 1;
-  :hover {
-    .ant-breadcrumb {
-      overflow-x: auto;
-    }
-  }
+  height: 56px;
+  line-height: 56px;
   ::v-deep(.ant-breadcrumb) {
     display: flex;
+    align-items: center;
+    flex: 1;
     overflow: hidden;
-    height: 56px;
-    line-height: 56px;
     font-size: 20px;
+    &:hover {
+      overflow-x: auto !important;
+    }
     span {
       white-space: nowrap;
       text-overflow: ellipsis;
       .ant-breadcrumb-separator {
         margin: 0 4px;
+      }
+    }
+  }
+  .extra {
+    a {
+      margin-left: 8px;
+      svg {
+        height: 36px;
+        width: 36px;
+        vertical-align: middle;
       }
     }
   }

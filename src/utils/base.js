@@ -1,3 +1,11 @@
+export const JsonParse = str => {
+  try {
+    return JSON.parse(str)
+  } catch (e) {
+    return false
+  }
+}
+
 export const queryURLparams = url => {
   let obj = {}
   if (url.indexOf('?') < 0) return obj

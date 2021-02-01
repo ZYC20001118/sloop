@@ -1,9 +1,9 @@
 import request from './request'
 
-export const getList = (path, params) => {
-  return request({
+export const getList = (path, params, cancelToken) => {
+  return request.get({
     url: path,
-    method: 'get',
-    params: params
+    params: params,
+    cancelToken: cancelToken
   })
 }

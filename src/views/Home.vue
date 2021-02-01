@@ -3,7 +3,7 @@
     <a-layout-content>
       <!-- 面包屑导航 -->
       <div class="head-nav">
-        <head-nav class="warp" ref="refHeadNav" :title="data.title" />
+        <head-nav class="warp" ref="refHeadNav" :data="data" />
       </div>
       <!-- 文件列表 -->
       <div v-if="data.page == 'list'" class="file-list">
@@ -27,16 +27,11 @@
           </template>
           <template #name="{ text, record }">
             <svg aria-hidden="true" focusable="false">
-              <use :xlink:href="'#icon-' + record.type"></use>
-            </svg>
-            {{ text }}
+              <use :xlink:href="'#icon-' + record.type"></use></svg
+            >{{ text }}
           </template>
-          <template #size="{ text }">
-            {{ text || '-' }}
-          </template>
-          <template #time="{ text }">
-            {{ text || '-' }}
-          </template>
+          <template #size="{ text }">{{ text || '-' }}</template>
+          <template #time="{ text }">{{ parseDate2Str(text) || '-' }}</template>
         </a-table>
       </div>
       <!-- 预览页面 -->
@@ -60,7 +55,12 @@
     <!-- 页脚 -->
     <a-layout-footer v-if="data.page == 'list'">
       <div class="warp">
-        <p>Powered by sharelist | Theme by sloop</p>
+        <p>
+          Powered by <a href="https://github.com/reruin/sharelist/" target="_blank">sharelist</a> |
+          Theme by sloop
+          <br />
+          构建时间: {{ updateTime }}
+        </p>
         <p><a href="/manage" target="_blank">管理</a></p>
       </div>
     </a-layout-footer>
@@ -71,20 +71,28 @@
 import HeadNav from '../components/HeadNav.vue'
 
 import { getList } from '../utils/api'
-import { queryURLparams } from '../utils/base'
+import { queryURLparams, JsonParse } from '../utils/base'
 import { byte } from '../utils/format'
-import { message } from 'ant-design-vue'
+
+import { CancelToken } from 'axios'
 import DPlayer from 'dplayer'
 import { useRoute, useRouter } from 'vue-router'
 import { reactive, watch, toRefs, ref, onMounted } from 'vue'
+import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
 
 export default {
   components: {
     HeadNav
   },
-  data() {
-    return {
-      // data: [],
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
+
+    const data = reactive({
+      // 主要数据
+      data: typeof window.data == 'undefined' ? [] : window.data,
+      // 自定义表格
       columns: [
         {
           align: 'left',
@@ -113,46 +121,15 @@ export default {
           }
         }
       ],
-      // 面包屑导航路由
-      routes: []
-    }
-  },
-  methods: {
-    // 设置表格行属性
-    customRow(record) {
-      return {
-        // 点击行
-        onClick: () => {
-          if (
-            record.type == 'folder' ||
-            record.type == 'level-up' ||
-            Object.prototype.hasOwnProperty.call(queryURLparams(record.href), 'preview')
-          ) {
-            this.$router.push(record.href)
-          } else {
-            window.open(record.href, '_blank')
-          }
-        }
-      }
-    }
-  },
-  setup() {
-    const route = useRoute()
-    const router = useRouter()
-
-    const data = reactive({
-      data: typeof window.data == 'undefined' ? [] : window.data,
       // 文件列表加载动画
       file_list_loading: false,
       // 播放器
-      dplayer: null
+      dplayer: null,
+      updateTime: process.env.VUE_APP_UPDATE_TIME
     })
-
-    if (data.data == []) {
-      router.push('/404')
-    }
-
-    // 渲染页面
+    /**
+     * 渲染页面
+     */
     const renderPage = () => {
       console.log('====renderPage====渲染页面====')
       // 销毁播放器
@@ -192,7 +169,9 @@ export default {
         }
       }
     }
-    // 更新文件列表
+    /**
+     * 更新文件列表
+     */
     const updateFileList = () => {
       console.log('====updateFileList====更新文件列表====')
       data.file_list_loading = true
@@ -200,22 +179,79 @@ export default {
       if (path == undefined) {
         path = ''
       }
-      getList(path)
+      // 取消上一次的请求
+      if (data.cancel) {
+        data.cancel('取消请求')
+      }
+      getList(
+        path,
+        {},
+        new CancelToken(c => {
+          // executor 函数接收一个 cancel 函数作为参数
+          data.cancel = c
+        })
+      )
         .then(res => {
-          let el = document.createElement('div')
-          el.innerHTML = res.data
-          let json = JSON.parse(el.getElementsByTagName('script')[0].innerHTML.substr(9)) // var data=
-          data.data = json
-          renderPage()
+          let div = document.createElement('div')
+          div.innerHTML = res.data
+          let script = div.getElementsByTagName('script')
+          if (script.length) {
+            let json = script[0].innerHTML.substr(9)
+            json = JsonParse(json)
+            if (json != false) {
+              data.data = json // var data=
+              renderPage()
+            } else {
+              this.error = true
+            }
+          } else {
+            this.error = true
+          }
+          if (this.error) {
+            router.back()
+          }
           data.file_list_loading = false
         })
         .catch(res => {
           console.log(res)
-          message.error(`${res}`)
           data.file_list_loading = false
-          router.back()
         })
     }
+    // 表格属性
+    const customRow = record => {
+      return {
+        // 点击行
+        onClick: () => {
+          if (
+            record.type == 'folder' ||
+            record.type == 'level-up' ||
+            Object.prototype.hasOwnProperty.call(queryURLparams(record.href), 'preview')
+          ) {
+            router.push(record.href)
+          } else {
+            window.open(record.href, '_blank')
+          }
+        },
+        onMouseDown: event => {
+          if (event.button == 1) {
+            window.open(record.href, '_blank')
+          }
+        }
+      }
+    }
+    /**
+     * 时间格式化
+     */
+    dayjs.extend(customParseFormat)
+    const parseDate2Str = time => {
+      if (dayjs(time).isValid() && !dayjs(time, 'YYYY-MM-DD', true).isValid()) {
+        time = dayjs(time).format('YYYY-M-D HH:mm:ss')
+      }
+      return time || '-'
+    }
+    /**
+     * 头部导航更新
+     */
     const refHeadNav = ref(null)
     const updateHeadNav = () => {
       refHeadNav.value.init()
@@ -223,16 +259,28 @@ export default {
     watch(
       () => route.path,
       () => {
-        updateHeadNav()
-        updateFileList()
+        if (['Home', 'Index'].includes(route.name)) {
+          updateHeadNav()
+          updateFileList()
+        }
       }
     )
     onMounted(() => {
       renderPage()
+      if (process.env.NODE_ENV === 'development') {
+        updateHeadNav()
+        updateFileList()
+      }
     })
+    // 404 跳转
+    if (data.data.length == 0 && process.env.NODE_ENV !== 'development') {
+      router.push('/404')
+    }
     return {
       ...toRefs(data),
-      refHeadNav
+      customRow,
+      refHeadNav,
+      parseDate2Str
     }
   }
 }
@@ -256,10 +304,10 @@ export default {
 .file-list {
   cursor: pointer;
   svg {
-    vertical-align: top;
-    width: 21px;
-    height: 21px;
-    margin-right: 2px;
+    vertical-align: middle;
+    width: 22px;
+    height: 22px;
+    margin-right: 6px;
   }
   .warp {
     padding: 0;
@@ -311,15 +359,17 @@ export default {
 footer {
   background: #fff;
   padding: 0;
-  margin-top: 20px;
+  margin-top: 30px;
   border-top: 1px solid #eee;
-  height: 40px;
-  line-height: 40px;
+  padding-top: 10px;
   color: #8c8c8c;
   .warp {
     display: flex;
     a {
       color: inherit;
+      &:hover {
+        color: #222;
+      }
     }
     p:first-child {
       flex: 1;

@@ -1,10 +1,10 @@
-const path = require('path')
+const port = process.env.port || process.env.npm_config_port || 33002 // dev port
 
-function resolve(dir) {
-  return path.join(__dirname, dir)
-}
-
-const port = process.env.port || process.env.npm_config_port || 9528 // dev port
+process.env.VUE_APP_TITLE = 'ShareList'
+const dayjs = require('dayjs')
+const time = dayjs().format('YYYY-M-D HH:mm:ss')
+process.env.VUE_APP_UPDATE_TIME = time
+process.env.VUE_APP_VERSION = '0.1'
 
 module.exports = {
   publicPath: '/',
@@ -16,33 +16,24 @@ module.exports = {
     overlay: {
       warnings: false,
       errors: true
+    },
+    // 前端配置代理访问后端
+    proxy: {
+      ['/api']: {
+        target: 'http://ubuntu:33001',
+        ws: true,
+        changeOrigin: true,
+        pathRewrite: {
+          ['^/api']: ''
+        }
+      }
     }
   },
   productionSourceMap: false,
   chainWebpack(config) {
-    config.when(process.env.NODE_ENV === 'development', config => config.devtool('cheap-source-map'))
-    config.optimization.splitChunks({
-      cacheGroups: {
-        vendors: {
-          name: 'chunk-vendors',
-          test: /[\\/]node_modules[\\/]/,
-          chunks: 'initial',
-          priority: 10
-        },
-        antDesignVue: {
-          name: 'chunk-ant-design-vue',
-          test: /[\\/]node_modules[\\/]ant-design-vue[\\/]/,
-          priority: 20
-        },
-        commons: {
-          name: 'chunk-commons',
-          test: resolve('src/components'),
-          minChunks: 3,
-          priority: 5,
-          reuseExistingChunk: true
-        }
-      }
-    })
+    config.when(process.env.NODE_ENV === 'development', config =>
+      config.devtool('cheap-source-map')
+    )
     config.optimization.runtimeChunk('single')
   }
 }
