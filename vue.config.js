@@ -31,9 +31,10 @@ module.exports = {
   },
   productionSourceMap: false,
   chainWebpack(config) {
-    config.when(process.env.NODE_ENV === 'development', config =>
-      config.devtool('cheap-source-map')
-    )
+    // 移除 prefetch 插件
+    config.plugins.delete('prefetch')
+    // 移除 preload 插件
+    config.plugins.delete('preload')
     config.optimization.runtimeChunk('single')
   }
 }

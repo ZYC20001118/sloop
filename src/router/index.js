@@ -1,28 +1,29 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import ErrorPage404 from '../views/ErrorPage404.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/:path(.*)',
-      name: 'Home',
-      component: Home
-    },
-    {
       path: '/',
       name: 'Index',
-      component: Home
+      component: () => import('../views/Home'),
+      children: [
+        {
+          path: ':path(.*)',
+          name: 'Index',
+          component: () => import('../views/Home')
+        }
+      ]
     },
     {
       path: '/404',
       name: 'ErrorPage404',
-      component: ErrorPage404
+      component: () => import('../views/ErrorPage404')
     },
     {
       path: '/:catchAll(.*)',
-      redirect: '/404'
+      redirect: '/404',
+      hidden: true
     }
   ]
 })

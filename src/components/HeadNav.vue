@@ -1,5 +1,5 @@
 <template>
-  <div class="nav">
+  <a-row class="nav" type="flex" align="middle">
     <a-breadcrumb :routes="routes">
       <template #itemRender="{ route, routes }">
         <span v-if="routes.indexOf(route) === routes.length - 1">
@@ -17,7 +17,7 @@
         </svg>
       </a>
     </div>
-  </div>
+  </a-row>
 </template>
 
 <script>
@@ -67,22 +67,21 @@ export default {
 <style scoped lang="less">
 .nav {
   position: relative;
-  display: flex;
+  flex-flow: row;
   z-index: 1;
   height: 56px;
   line-height: 56px;
   ::v-deep(.ant-breadcrumb) {
-    display: flex;
-    align-items: center;
     flex: 1;
+    height: inherit;
+    line-height: inherit;
+    white-space: nowrap;
     overflow: hidden;
     font-size: 20px;
     &:hover {
-      overflow-x: auto !important;
+      overflow-x: auto;
     }
     span {
-      white-space: nowrap;
-      text-overflow: ellipsis;
       .ant-breadcrumb-separator {
         margin: 0 4px;
       }

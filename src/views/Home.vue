@@ -35,16 +35,22 @@
         </a-table>
       </div>
       <!-- 预览页面 -->
-      <div v-show="data.page == 'detail'" class="preview">
-        <!-- 视频预览 -->
-        <div v-show="data.type == 'video'" id="video-preview"></div>
-        <div v-if="data.type != 'video'" class="warp">
-          <!-- 图片预览 -->
-          <img v-if="data.type == 'image'" :src="data.url" />
-          <!-- 音频预览 -->
-          <audio v-if="data.type == 'audio'" :src="data.url" controls autoplay />
+      <a-spin
+        wrapperClassName="preview-spin"
+        :spinning="file_list_loading"
+        v-show="data.page == 'detail'"
+      >
+        <div v-show="data.page == 'detail'" class="preview">
+          <!-- 视频预览 -->
+          <div v-show="['video', 'hls'].includes(data.type)" id="video-preview"></div>
+          <div v-if="!['video', 'hls'].includes(data.type)" class="warp">
+            <!-- 图片预览 -->
+            <a-image v-if="data.type == 'image'" :src="data.url" />
+            <!-- 音频预览 -->
+            <audio v-if="data.type == 'audio'" :src="data.url" controls autoplay />
+          </div>
         </div>
-      </div>
+      </a-spin>
       <!-- 自诉文件 -->
       <div v-if="data.readme" class="readme warp">
         <a-card title="README.md">
@@ -54,15 +60,17 @@
     </a-layout-content>
     <!-- 页脚 -->
     <a-layout-footer v-if="data.page == 'list'">
-      <div class="warp">
-        <p>
+      <a-row class="warp" type="flex">
+        <a-col :flex="1">
           Powered by <a href="https://github.com/reruin/sharelist/" target="_blank">sharelist</a> |
           Theme by sloop
           <br />
           构建时间: {{ updateTime }}
-        </p>
-        <p><a href="/manage" target="_blank">管理</a></p>
-      </div>
+        </a-col>
+        <a-col>
+          <a href="/manage" target="_blank">管理</a>
+        </a-col>
+      </a-row>
     </a-layout-footer>
   </a-layout>
 </template>
@@ -75,7 +83,7 @@ import { queryURLparams, JsonParse } from '../utils/base'
 import { byte } from '../utils/format'
 
 import { CancelToken } from 'axios'
-import DPlayer from 'dplayer'
+// import DPlayer from 'dplayer'
 import { useRoute, useRouter } from 'vue-router'
 import { reactive, watch, toRefs, ref, onMounted } from 'vue'
 import dayjs from 'dayjs'
@@ -125,6 +133,8 @@ export default {
       file_list_loading: false,
       // 播放器
       dplayer: null,
+      // 是否跳过加载数据
+      skipLoad: false,
       updateTime: process.env.VUE_APP_UPDATE_TIME
     })
     /**
@@ -135,6 +145,16 @@ export default {
       // 销毁播放器
       if (data.dplayer) {
         data.dplayer.destroy()
+      }
+      // 列表最前加入..文件夹
+      if (data.data.parent) {
+        data.data.list.unshift({
+          href: data.data.parent,
+          type: 'level-up',
+          _size: 0,
+          updated_at: '',
+          name: '..'
+        })
       }
       // 设置标题
       let title = data.data.title || 'ShareList'
@@ -152,12 +172,16 @@ export default {
         })
       } else if (data.data.page == 'detail') {
         // 预览视频
-        if (data.data.type == 'video') {
+        if (['video', 'hls'].includes(data.data.type)) {
+          var type = 'auto'
+          if (data.data.type == 'hls') {
+            type = 'hls'
+          }
           data.dplayer = new DPlayer({
             container: document.getElementById('video-preview'),
             video: {
               url: data.data.url,
-              type: 'auto'
+              type: type
             },
             autoplay: true
           })
@@ -174,30 +198,32 @@ export default {
       if (path == undefined) {
         path = ''
       }
-      // 取消上一次的请求
       if (data.cancel) {
-        data.cancel('取消请求')
+        data.cancel('取消请求') // 取消上一次的请求
       }
       getList(
         path,
         {},
         new CancelToken(c => {
-          // executor 函数接收一个 cancel 函数作为参数
-          data.cancel = c
+          data.cancel = c // executor 函数接收一个 cancel 函数作为参数
         })
       )
         .then(res => {
-          let div = document.createElement('div')
+          let div = document.createElement('div') // 解析html
           div.innerHTML = res.data
           let script = div.getElementsByTagName('script')
-          let back = true
+          let back = true // 是否返回
           if (script.length) {
-            let json = script[0].innerHTML.substr(9)
+            let json = script[0].innerHTML.substr(9) // 去掉前面的 var data=
             json = JsonParse(json)
             if (json != false) {
-              data.data = json // var data=
-              renderPage()
-              back = false
+              if (['custom', 'auth'].includes(json.page)) {
+                window.open(route.fullPath, '_blank') // 自定义页面新窗打开
+              } else {
+                data.data = json
+                renderPage() // 渲染页面
+                back = false
+              }
             }
           }
           if (back) {
@@ -207,12 +233,15 @@ export default {
           console.log(res)
         })
         .catch(res => {
-          console.log(res.response)
+          console.error(res.response)
           data.file_list_loading = false
-          // router.back() // 有BUG
+          data.skipLoad = true
+          router.back()
         })
     }
-    // 表格属性
+    /**
+     * 表格属性
+     */
     const customRow = record => {
       return {
         // 点击行
@@ -254,10 +283,11 @@ export default {
     watch(
       () => route.path,
       () => {
-        if (['Home', 'Index'].includes(route.name)) {
+        if (!data.skipLoad && route.name == 'Index') {
           updateHeadNav()
           updateFileList()
         }
+        data.skipLoad = false
       }
     )
     onMounted(() => {
@@ -334,40 +364,48 @@ export default {
   }
 }
 // 预览页面
-.preview {
+.preview-spin {
   position: absolute;
   left: 0;
   width: 100%;
   top: 0;
   height: 100%;
   padding-top: 56px;
-  .warp {
-    padding: 15px;
-    img {
-      max-width: 100%;
-    }
-  }
-  #video-preview {
+  ::v-deep(.ant-spin-container) {
     height: 100%;
+    width: 100%;
+    .preview {
+      width: 100%;
+      height: 100%;
+      .warp {
+        padding: 15px;
+        text-align: center;
+        img {
+          max-width: 100%;
+        }
+        audio {
+          width: 100%;
+          outline: none;
+        }
+      }
+      #video-preview {
+        height: 100%;
+      }
+    }
   }
 }
 footer {
   background: #fff;
-  padding: 0;
   margin-top: 30px;
   border-top: 1px solid #eee;
-  padding-top: 10px;
+  padding: 10px 0;
   color: #8c8c8c;
   .warp {
-    display: flex;
     a {
       color: inherit;
       &:hover {
         color: #222;
       }
-    }
-    p:first-child {
-      flex: 1;
     }
   }
 }
