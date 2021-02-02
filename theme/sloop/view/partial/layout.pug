@@ -1,0 +1,43 @@
+- var cdn = 'https://cdn.jsdelivr.net/gh/liumingye/cdn@4.m/'
+
+if(base_url)
+  - var url = base_url.replace(/\/+$/g, '')
+  - var subtitle = decodeURI(url.substring(url.lastIndexOf("\/") + 1, url.length))
+
+if(data)
+  - function extname(a){return a.substr((~-a.lastIndexOf(".")>>>0)+2).toLowerCase()}
+  - for (var x = 0; x < data.length; x++){
+  -   if(['readme.md', '好友的分享'].includes(data[x].name.toLowerCase())){ 
+  -     data.splice(x,1)
+  -   }
+  - }
+  - for (var x = 0; x < data.length; x++){
+  -   delete data[x].size
+  -   var ext = extname(data[x].name)
+  -   if(['url', 'exe', 'md'].includes(ext)){
+  -     data[x].type = ext
+  -   } else if (['m3u8'].includes(ext)){
+  -     data[x].type = 'video'
+  -   }
+  -   data[x].href = decodeURI(data[x].href)
+  - }
+  - var json = {}
+
+doctype html
+html
+  head
+    title
+      block title
+        if(subtitle)
+          | #{subtitle + ' - '}
+        | #{_config_('title')}
+    meta(charset='utf8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0,minimum-scale=1.0, maximum-scale=1.0, user-scalable=no')
+    meta(http-equiv="X-UA-Compatible", content="IE=Edge,chrome=1")
+    meta(name="referrer",content="never")
+    link(rel='stylesheet', href='/css/chunk-vendors.43357ea6.css')
+    -if(g_config && g_config.custom_style)
+      .
+        !{g_config.custom_style}
+  body
+    block content

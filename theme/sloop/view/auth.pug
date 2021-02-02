@@ -1,0 +1,110 @@
+- var cdn = 'https://cdn.jsdelivr.net/gh/liumingye/cdn@4.m/'
+
+doctype html
+html
+  head
+    title
+      | #{_config_('title')}
+    meta(charset='utf8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0,minimum-scale=1.0, maximum-scale=1.0, user-scalable=no')
+    meta(http-equiv="X-UA-Compatible", content="IE=Edge,chrome=1")
+    link(rel='stylesheet', href='https://cdn.bootcss.com/twitter-bootstrap/4.5.3/css/bootstrap.min.css')
+    link(rel='stylesheet', type='text/css', href=cdn + 'style/main.css')
+    -if(g_config && g_config.custom_style)
+      .
+        !{g_config.custom_style}
+  body
+  div#app
+    include partial/message
+    header
+      .wrap
+        ul.head-nav
+          li(v-for="data in nav",:class="data.class")
+            a(:href="data.href")
+              | {{data.name}}
+    section.wrap.auth
+      h3 #{name}
+      div
+        .form-group
+          input.sl-input(v-model="user",type='text',placeholder=__('auth_user_placeholder'))
+          input.sl-input(v-model="passwd",type='password',placeholder=__('auth_passwd_placeholder'),@keyup.13="checkAuth")
+        button.sl-button.btn-primary(type="button",@click="checkAuth",:disabled="isAble")= __('ok')
+
+  script
+    | var data={"title":"#{_config_('title')}","page":"auth","user":null,"passwd":null,"isAble":false}
+
+  script(src='https://cdn.bootcss.com/axios/0.21.1/axios.min.js')
+  script(src='https://cdn.bootcss.com/vue/2.6.12/vue.min.js')
+  script(src='https://cdn.bootcss.com/smoothscroll/1.4.9/SmoothScroll.min.js')
+
+  script.
+    var app = new Vue({
+      el: '#app',
+      data:function(){
+        return Object.assign(typeof window.data == 'undefined' ? {} : window.data,{isShowMsg: false})
+      },
+      created: function(){
+        if(this.parent){
+          this.list.unshift({href:this.parent,type:'level-up',name:'..'})
+        }
+        var item = location.pathname.substr(1).split('/'),
+          nav = [{name:this.title,href:'/'}],
+          pre = '/'
+        for(var i=0;i<item.length;i++){
+          var v = item[i]
+          if(v == ''){
+            break;
+          }
+            nav.push({
+            name:decodeURIComponent(v),
+            href:location.origin + pre + v
+          })
+          pre += v + '/'
+        }
+        nav[nav.length-1].class='current'
+        this.nav=nav
+      },
+      methods: {
+        goto: function(url){
+          var a = document.createElement('a');
+          a.setAttribute('href', url || '');
+          document.body.appendChild(a);
+          a.click();
+        },
+        showMsg: function(msg){
+          var _ = this
+          _.msg = msg
+          _.isShowMsg = true
+          setTimeout(function(){
+            _.isShowMsg = false
+          },2000)
+        },
+        checkAuth: function(){
+          var _ = this
+          this.isAble = true
+          axios.post('',{
+            act: 'auth',
+            user: _.user,
+            passwd: _.passwd,
+            path: location.pathname
+          }).then(function (resp) {
+            var res = resp.data
+            if(res.status == 0){
+              if(res.rurl){
+                _.goto(res.rurl)
+              }else{
+                _.goto()
+              }
+            }else{
+              _.showMsg(res.message)
+            }
+            _.isAble = false
+          }).catch(function (error) {
+            _.showMsg(error)
+            _.isAble = false
+          });
+        }
+      }
+    })
+
+  include partial/footer

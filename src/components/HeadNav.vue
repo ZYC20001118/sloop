@@ -1,6 +1,6 @@
 <template>
-  <a-row class="nav" type="flex" align="middle">
-    <a-breadcrumb :routes="routes">
+  <a-row class="nav" type="flex">
+    <a-breadcrumb :routes="routes" ref="refNav">
       <template #itemRender="{ route, routes }">
         <span v-if="routes.indexOf(route) === routes.length - 1">
           {{ route.breadcrumbName }}
@@ -21,7 +21,8 @@
 </template>
 
 <script>
-import { reactive, toRefs } from 'vue'
+import { reactive, toRefs, watch, ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 
 export default {
   name: 'HeadNav',
@@ -29,36 +30,48 @@ export default {
     data: Object
   },
   setup(props) {
+    const route = useRoute()
     const data = reactive({
-      data: props.data,
       routes: []
     })
+    const refNav = ref(0)
     const init = () => {
-      if (process.env.NODE_ENV === 'development') {
+      new Promise(resolve => {
         data.data = props.data
-      }
-      const paths = location.pathname.substr(1).split('/')
-      let routes = [
-        {
-          path: '/',
-          breadcrumbName: data.data.title
-        }
-      ]
-      paths.map(val => {
-        if (val == '') {
-          return false
-        }
-        routes.push({
-          path: `${routes[routes.length - 1].path}${val}/`,
-          breadcrumbName: decodeURIComponent(val)
+        const paths = location.pathname.substr(1).split('/')
+        let routes = [
+          {
+            path: '/',
+            breadcrumbName: data.data.title
+          }
+        ]
+        paths.map(val => {
+          if (val == '') {
+            return false
+          }
+          routes.push({
+            path: `${routes[routes.length - 1].path}${val}/`,
+            breadcrumbName: decodeURIComponent(val)
+          })
         })
+        data.routes = routes
+        resolve()
+      }).then(() => {
+        refNav.value.$el.scrollLeft = 999999 // 加载完成后滚动条滚到最右边
       })
-      data.routes = routes
     }
-    init()
+    watch(
+      () => route.path,
+      () => {
+        init()
+      }
+    )
+    onMounted(() => {
+      init()
+    })
     return {
       ...toRefs(data),
-      init
+      refNav
     }
   }
 }
@@ -76,10 +89,24 @@ export default {
     height: inherit;
     line-height: inherit;
     white-space: nowrap;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     font-size: 20px;
+    &::-webkit-scrollbar {
+      display: none;
+      height: 10px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #636e72;
+    }
+    &::-webkit-scrollbar-track {
+      background: #d6dadc;
+    }
     &:hover {
       overflow-x: auto;
+      &::-webkit-scrollbar {
+        display: block;
+      }
     }
     span {
       .ant-breadcrumb-separator {

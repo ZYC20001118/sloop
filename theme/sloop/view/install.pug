@@ -1,0 +1,58 @@
+extends partial/layout
+block title
+  | #{__('install')} - ShareList
+block content
+  include partial/message
+  style.
+    h3{clear:both;padding-top:24px}
+  header
+    .wrap
+      a.home(href='/') ShareList
+  section.wrap
+    .py-4
+      h4.text-center= __('install')
+
+      form(action='',method='post')
+        h3.font-weight-bold.mb-4= __('token')
+        .form-group
+          input.form-control(type='text', name='token' , placeholder=__('new_token'),required)
+        h3.font-weight-bold.mb-4= __('site_title')
+        .form-group
+          input.form-control(type='text', name='title', value="ShareList" , placeholder=__('site_title'),required)
+        h3.font-weight-bold.mb-4= __('virtual_path')
+        div.group-path
+          .item.row.mb-2
+            .col-sm-3.mb-2
+              select.form-control(name='vendor', placeholder=__('type'),required)
+                each vendor in vendors
+                  option(value=vendor.protocol) #{vendor.label}
+            .col-sm-2.mb-2
+              input.form-control(type='text', name='name', placeholder=__('name'),required)
+            .col-sm-6.mb-2
+              input.form-control(type='text', name='path', placeholder=__('input_path_placeholder'))
+            .col-sm-1.mb-2
+              a.btn.btn-outline-danger.remove-path.btn-block -
+        button.btn.btn-primary.float-right(type='submit')= __('save')
+        a.btn.btn-primary.float-right.mr-2.create-path= __('add')
+
+  script(src='https://cdn.bootcss.com/jquery/3.5.1/jquery.min.js')
+  script.
+    $(function(){
+      var item
+      if($('.item').length){
+        item = $('.item:first').clone()
+        item.find('input').val('')
+      }
+      $('body').on('click','.create-path' , function(){
+        $('.group-path').append( item.clone() )
+      }).on('click' ,'.remove-path' , function(){
+        $(this).parents('.item').remove()
+      })
+
+      let example = $('.item:first')
+      example.find('[name="vendor"]').val('fs')
+      example.find('[name="name"]').val('演示目录')
+      example.find('[name="path"]').val('./example')
+    })
+
+  include partial/footer

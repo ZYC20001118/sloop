@@ -1,0 +1,300 @@
+- var cdn = 'https://cdn.jsdelivr.net/gh/liumingye/cdn@4.m/'
+
+doctype html
+html
+  head
+    title
+      | #{__('manage')} - #{_config_('title')}
+    meta(charset='utf8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0,minimum-scale=1.0, maximum-scale=1.0, user-scalable=no')
+    meta(http-equiv="X-UA-Compatible", content="IE=Edge,chrome=1")
+    link(rel='stylesheet', href='https://cdn.bootcss.com/twitter-bootstrap/4.5.3/css/bootstrap.min.css')
+    link(rel='stylesheet', type='text/css', href=cdn + 'style/main.css')
+    -if(g_config && g_config.custom_style)
+      .
+        !{g_config.custom_style}
+  body
+    .sl-message(style="display:none")
+      .sl-message-notice
+        .sl-message-notice-content
+          span
+    style.
+      .op-btn .btn{margin-right:5px}.op-btn form{display:inline-block}.menu > form{clear:both;padding-top:24px}
+    header
+      .wrap
+        a.home(href='/')= _config_('title')
+    section.wrap
+      .menu
+        - if(access)
+          .op-btn
+            a.btn.btn-success(href='?a=export',target='_blank')= __('export')
+            a.btn.btn-success(href='/manage/shell',target='_blank') Shell
+            form(method='post',action="/manage/api")
+              input(type='hidden',name='a',value='clear_cache')
+              button.btn.btn-danger= __('clear_cache')
+            form(method='post',action="/manage/api")
+              input(type='hidden',name='a',value='reboot')
+              button.btn.btn-danger= __('reboot')
+            form(method='post',action="/manage/api")
+              input(type='hidden',name='a',value='signout')
+              button.btn.btn-danger= __('signout')
+
+          form(method='post',action="/manage/api")
+            input(type='hidden',name='a',value='cfg')
+            h3.font-weight-bold.mb-4= __("general")
+            .form-group.row
+              .col-sm-4
+                span= __('language')
+              .col-sm-8
+                select.form-control(name='language',value=config.language)
+                  option(value='', selected=config.language=='' ? 'selected' : null)= __('自动')
+                  option(value='zh-CN', selected=config.language=='zh-CN' ? 'selected' : null)= __('简体中文')
+                  option(value='zh-TW', selected=config.language=='zh-TW' ? 'selected' : null)= __('繁體中文')
+                  option(value='en-US', selected=config.language=='en-US' ? 'selected' : null)= __('English')
+            .form-group.row
+              .col-sm-4
+                span= __('theme')
+              .col-sm-8
+                select.form-control(name='theme',value=config.theme)
+                  each i in config.themes
+                    option(value=i, selected=i==config.theme ? 'selected' : null)= i == 'default' && __('theme') == '主题' ? '默认' : i
+            .form-group.row
+              .col-sm-4
+                span= __('index_enable')
+              .col-sm-8
+                select.form-control(name='index_enable',value=config.index_enable,required)
+                  option(value='1', selected=config.index_enable==1 ? 'selected' : null)= __('enable')
+                  option(value='0', selected=config.index_enable==0 ? 'selected' : null)= __('disable')
+            .form-group.row
+              .col-sm-4
+                span= __('preview_enable')
+              .col-sm-8
+                select.form-control(name='preview_enable',value=config.preview_enable,required)
+                  option(value='1', selected=config.preview_enable==1 ? 'selected' : null)= __('enable')
+                  option(value='0', selected=config.preview_enable==0 ? 'selected' : null)= __('disable')
+            .form-group.row
+              .col-sm-4
+                span= __('readme_enable')
+              .col-sm-8
+                select.form-control(name='readme_enable',value=config.readme_enable,required)
+                  option(value='1', selected=config.readme_enable==1 ? 'selected' : null)= __('enable')
+                  option(value='0', selected=config.readme_enable==0 ? 'selected' : null)= __('disable')
+            .form-group.row
+              .col-sm-4
+                span= __('anonymous_uplod_enable')
+              .col-sm-8
+                select.form-control(name='anonymous_uplod_enable',value=config.anonymous_uplod_enable,required)
+                  option(value='1', selected=config.anonymous_uplod_enable==1 ? 'selected' : null)= __('enable')
+                  option(value='0', selected=config.anonymous_uplod_enable==0 ? 'selected' : null)= __('disable')
+            .form-group.row
+              .col-sm-4
+                span= __('anonymous_download')
+              .col-sm-8
+                input.form-control(type='text', name='anonymous_download' , value=config.anonymous_download,placeholder=__('anonymous_download_placeholder'))
+            hr
+            .form-group.row
+              .col-sm-4
+                span= __('proxy_enable')
+              .col-sm-8
+                select.form-control(name='proxy_enable',value=config.proxy_enable,required)
+                  option(value='1', selected=config.proxy_enable==1 ? 'selected' : null)= __('enable')
+                  option(value='0', selected=config.proxy_enable==0 ? 'selected' : null)= __('disable')
+            .form-group.row
+              .col-sm-4
+                span= __('proxy_paths')
+              .col-sm-8
+                input.form-control(type='text', name='proxy_paths' , value=config.proxy_paths.join(','),placeholder=__('ignore_paths_placeholder'))
+            .form-group.row
+              .col-sm-4
+                span= __('proxy_server')
+              .col-sm-8
+                input.form-control(type='text', name='proxy_server' , value=config.proxy_server,placeholder=__('proxy_server_placeholder'))
+            hr
+            .form-group.row
+              .col-sm-4
+                span= __('max_age_dir')
+              .col-sm-8
+                input.form-control(type='text', name='max_age_dir' , value=config.max_age_dir / 1000,required)
+            .form-group.row
+              .col-sm-4
+                span= __('max_age_file')
+              .col-sm-8
+                input.form-control(type='text', name='max_age_file' , value=config.max_age_file / 1000,required)
+            .form-group.row
+              .col-sm-4
+                span= __('max_age_download')
+              .col-sm-8
+                input.form-control(placeholder=__('max_age_download_placeholder'),type='text', name='max_age_download' , value=config.max_age_download / 1000,required)
+            .form-group.row
+              .col-sm-4
+                span= __('ignore_file_extensions')
+              .col-sm-8
+                input.form-control(type='text', name='ignore_file_extensions' , value=config.ignore_file_extensions,placeholder=__('ignore_file_extensions_placeholder'))
+            .form-group.row
+              .col-sm-4
+                span= __('ignore_paths')
+              .col-sm-8
+                input.form-control(type='text', name='ignore_paths' , value=config.ignore_paths.__root__.join(','),placeholder=__('ignore_paths_placeholder'))
+            hr
+            .form-group.row
+              .col-sm-4
+                span= __('webdav_path')
+              .col-sm-8
+                input.form-control(type='text', name='webdav_path' , value=config.webdav_path,required)
+            .form-group.row
+              .col-sm-4
+                span= __('smb_server_enable')
+              .col-sm-8
+                select.form-control(name='smb_server_enable',value=config.smb_server_enable,required)
+                  option(value='1', selected=config.smb_server_enable==1 ? 'selected' : null)= __('enable')
+                  option(value='0', selected=config.smb_server_enable==0 ? 'selected' : null)= __('disable')
+            .form-group.row
+              .col-sm-4
+                span= __('smb_server_port')
+              .col-sm-8
+                input.form-control(type='text', name='smb_server_port' , value=config.smb_server_port,required)
+            .form-group.row
+              .col-sm-4
+                span= __('smb_anonymous_enable')
+              .col-sm-8
+                select.form-control(name='smb_anonymous_enable',value=config.smb_anonymous_enable,required)
+                  option(value='1', selected=config.smb_anonymous_enable==1 ? 'selected' : null)= __('enable')
+                  option(value='0', selected=config.smb_anonymous_enable==0 ? 'selected' : null)= __('disable')
+            .form-group.row
+              .col-sm-4
+                span= __('ocr_server')
+              .col-sm-8
+                input.form-control(type='text', name='ocr_server' , value=config.ocr_server,placeholder=__('ocr_server_placeholder'))
+            .form-group.row
+              .col-sm-4
+                span= __('custom_style')
+              .col-sm-8
+                textarea.form-control(name='custom_style')
+                  | #{config.custom_style}
+            .form-group.row
+              .col-sm-4
+                span= __('custom_script')
+              .col-sm-8
+                textarea.form-control(name='custom_script')
+                  | #{config.custom_script}
+
+            button.btn.btn-primary.float-right(type='submit')= __('save')
+
+          form(method='post',action="/manage/api")
+            input(type='hidden',name='a',value='plugin_option')
+            h3.font-weight-bold.mb-4= __('plugin_option')
+            each i in config.plugin_option
+              .form-group.row
+                .col-sm-4
+                  span= i.value.label
+                .col-sm-8
+                  -if(i.value.options)
+                    select.form-control(name=i.key,value=i.value.value)
+                      each j in i.value.options
+                        option(value=j.value, selected=j.value==i.value.value ? 'selected' : null)= j.label
+                  -else
+                    input.form-control(type='text',placeholder=i.value.placeholder, name=i.key , value=i.value.value)
+            button.btn.btn-primary.float-right(type='submit')= __('save')
+
+          form(method='post',action="/manage/api")
+            input(type='hidden',name='a',value='token')
+            h3.font-weight-bold.mb-4= __('token')
+            .form-group
+              input.form-control(type='text', name='token' , placeholder=__('new_token'),required)
+            button.btn.btn-primary.float-right(type='submit')= __('save')
+
+          form(method='post',action="/manage/api")
+            input(type='hidden',name='a',value='title')
+            h3.font-weight-bold.mb-4= __('site_title')
+            .form-group
+              input.form-control(type='text', name='title' , value=config.title , placeholder=__('site_title'),required)
+            button.btn.btn-primary.float-right(type='submit')= __('save')
+
+          form(method='post',action="/manage/api")
+            input(type='hidden',name='a',value='path')
+            h3.font-weight-bold.mb-4= __('virtual_path')
+            div.group-path
+              each i in config.path
+                .item.row.mb-2.no-gutters
+                  .col-sm-3.mb-2
+                    select.form-control(name='vendor', value=(i.path.match(/^.*(?=\:\/\/)/) || [''])[0],placeholder=__('type'),required)
+                      each vendor in vendors
+                        option(value=vendor.protocol, selected=i.path.indexOf(vendor.protocol+':')>=0 ? 'selected' : null) #{vendor.label}
+                  .col-sm-2.mb-2.pl-1
+                    input.form-control(type='text', name='name', value=i.name,placeholder=__('name'),required)
+                  .col-sm-7.mb-2.pl-1.d-flex
+                    input.form-control.flex-fill(type='text', name='path', value=i.path.replace(/^.*?\:/,''),placeholder=__('input_path_placeholder'))
+                    a.btn.btn-outline-danger.remove-path.ml-1 -
+            button.btn.btn-primary.float-right(type='submit')= __('save')
+            a.btn.btn-primary.float-right.mr-2.create-path= __('add')
+
+        - else
+          div.auth
+            h3= __("manage")
+            div
+              form(method='post',action="/manage/api")
+                input(type='hidden',name='a',value='signin')
+                .form-group
+                  input.sl-input#j_token(type='password', name='token', placeholder=__('input_token'))
+                button.sl-button.btn-primary#signin(type="submit")= __('signin')
+    script(src='https://cdn.bootcss.com/jquery/3.5.1/jquery.min.js')
+    script(src='https://cdn.bootcss.com/jquery.form/4.3.0/jquery.form.min.js')
+    - if(access)
+      script(src='https://cdn.bootcss.com/Sortable/1.13.0/Sortable.min.js')
+      script.
+        $(function(){
+          var item
+          if($('.item').length){
+            item = $('.item:first').clone()
+            item.find('input').val('')
+          }
+          $('body').on('click','.create-path' , function(){
+            $('.group-path').append( item.clone() )
+          })
+          .on('click' ,'.remove-path' , function(){
+            $(this).parents('.item').remove()
+          })
+          new Sortable($('.group-path')[0], {
+            draggable: ".item",
+            handle: ".remove-path",
+            animation: 150,
+            fallbackTolerance: 3,
+            touchStartThreshold: 3
+          });
+        })
+
+    script.
+      $(function(){
+        function showMsg(m){
+          $('.sl-message span').html(m)
+          $('.sl-message').fadeIn(50)
+          setTimeout(function(){
+            $('.sl-message').fadeOut(1000)
+          },2000)
+        }
+        $('form').ajaxForm({beforeSubmit:function(arr, $form){
+          var btn = $form.find('button[type="submit"]')
+          if(!btn.length){
+            btn = $form.find('button')
+          }
+          btn.attr('disabled', true)
+          this.btn = btn
+        },error:function(){
+          showMsg('error')
+          this.btn.removeAttr('disabled')
+        },success:function(resp){
+          if(resp && resp.message){
+            showMsg(resp.message)
+          }
+          if(resp.a =='signin' || resp.a == 'token' || resp.a == 'signout'){
+            if(resp.status == 0){
+              return location.reload()
+            }
+          }else if(resp.status != 0){
+            return location.reload()
+          }
+          this.btn.removeAttr('disabled')
+        }})
+      })
+
+    include partial/footer

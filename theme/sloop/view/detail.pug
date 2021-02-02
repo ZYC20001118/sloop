@@ -1,0 +1,22 @@
+extends partial/layout
+
+block title
+  | #{data.name} - #{_config_('title')}
+
+block content
+  div#app
+
+  script
+    | var data=
+    - if(data.name){json.subtitle=data.name}
+    - json.page='detail'
+    - json.title=_config_('title')
+    - var ext = extname(data.name)
+    - if (['m3u8'].includes(ext)){
+    -   data.type = 'hls'
+    - }
+    - json.type=data.type
+    - json.url=url ? url : data.url
+    !=JSON.stringify(json)
+
+  include script

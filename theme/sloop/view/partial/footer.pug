@@ -1,0 +1,11 @@
+footer
+  p
+    | #{'Powered by '}
+    a(href='https://github.com/reruin/sharelist',target='_blank') sharelist
+    |  | #{'Theme by '}
+    a(href='https://pan.liumingye.cn/',target='_blank') lmy
+  p
+    a(href='/manage',target='_blank')= __('manage')
+-if(g_config.custom_script)
+  .
+    !{g_config.custom_script}

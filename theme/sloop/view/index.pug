@@ -1,0 +1,19 @@
+extends partial/layout
+
+block content
+  div#app
+
+  script
+    | var data=
+    - json.list=data
+    - if(subtitle){json.subtitle=subtitle}
+    - if(readme){json.readme=readme}
+    - if(parent){json.parent=parent}
+    - json.page='list'
+    - json.title=_config_('title')
+    !=JSON.stringify(json)
+
+  include script
+
+  //- -if(writeable)
+    //- script(src=cdn + 'script/upload.js')

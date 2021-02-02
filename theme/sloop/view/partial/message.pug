@@ -1,0 +1,9 @@
+transition(name="fade")
+  .sl-message(v-if="isShowMsg")
+    .sl-message-notice
+      .sl-message-notice-content
+        span
+          -if(message)
+            #{message}
+          -else
+            | {{ msg }}

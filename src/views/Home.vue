@@ -3,7 +3,7 @@
     <a-layout-content>
       <!-- 面包屑导航 -->
       <div class="head-nav">
-        <head-nav class="warp" ref="refHeadNav" :data="data" />
+        <head-nav class="warp" :data="data" />
       </div>
       <!-- 文件列表 -->
       <div v-if="data.page == 'list'" class="file-list">
@@ -35,11 +35,7 @@
         </a-table>
       </div>
       <!-- 预览页面 -->
-      <a-spin
-        wrapperClassName="preview-spin"
-        :spinning="file_list_loading"
-        v-show="data.page == 'detail'"
-      >
+      <a-spin wrapperClassName="preview-spin" :spinning="file_list_loading" v-show="data.page == 'detail'">
         <div v-show="data.page == 'detail'" class="preview">
           <!-- 视频预览 -->
           <div v-show="['video', 'hls'].includes(data.type)" id="video-preview"></div>
@@ -62,8 +58,7 @@
     <a-layout-footer v-if="data.page == 'list'">
       <a-row class="warp" type="flex">
         <a-col :flex="1">
-          Powered by <a href="https://github.com/reruin/sharelist/" target="_blank">sharelist</a> |
-          Theme by sloop
+          Powered by <a href="https://github.com/reruin/sharelist/" target="_blank">sharelist</a> | Theme by sloop
           <br />
           构建时间: {{ updateTime }}
         </a-col>
@@ -83,9 +78,8 @@ import { queryURLparams, JsonParse } from '../utils/base'
 import { byte } from '../utils/format'
 
 import { CancelToken } from 'axios'
-// import DPlayer from 'dplayer'
 import { useRoute, useRouter } from 'vue-router'
-import { reactive, watch, toRefs, ref, onMounted } from 'vue'
+import { reactive, watch, toRefs, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 
@@ -106,6 +100,7 @@ export default {
           align: 'left',
           dataIndex: 'name',
           slots: { title: 'nameTitle', customRender: 'name' },
+          ellipsis: true,
           sorter: (a, b) => {
             return a.name < b.name ? 1 : -1
           }
@@ -177,7 +172,7 @@ export default {
           if (data.data.type == 'hls') {
             type = 'hls'
           }
-          data.dplayer = new DPlayer({
+          data.dplayer = new window.DPlayer({
             container: document.getElementById('video-preview'),
             video: {
               url: data.data.url,
@@ -230,7 +225,6 @@ export default {
             router.back()
           }
           data.file_list_loading = false
-          console.log(res)
         })
         .catch(res => {
           console.error(res.response)
@@ -246,11 +240,7 @@ export default {
       return {
         // 点击行
         onClick: () => {
-          if (
-            record.type == 'folder' ||
-            record.type == 'level-up' ||
-            Object.prototype.hasOwnProperty.call(queryURLparams(record.href), 'preview')
-          ) {
+          if (record.type == 'folder' || record.type == 'level-up' || Object.prototype.hasOwnProperty.call(queryURLparams(record.href), 'preview')) {
             router.push(record.href)
           } else {
             window.open(record.href, '_blank')
@@ -273,18 +263,10 @@ export default {
       }
       return time || '-'
     }
-    /**
-     * 头部导航更新
-     */
-    const refHeadNav = ref(null)
-    const updateHeadNav = () => {
-      refHeadNav.value.init()
-    }
     watch(
       () => route.path,
       () => {
         if (!data.skipLoad && route.name == 'Index') {
-          updateHeadNav()
           updateFileList()
         }
         data.skipLoad = false
@@ -293,7 +275,6 @@ export default {
     onMounted(() => {
       renderPage()
       if (process.env.NODE_ENV === 'development') {
-        updateHeadNav()
         updateFileList()
       }
     })
@@ -304,7 +285,6 @@ export default {
     return {
       ...toRefs(data),
       customRow,
-      refHeadNav,
       parseDate2Str
     }
   }
@@ -412,8 +392,13 @@ footer {
 @media (max-width: 576px) {
   .file-list {
     ::v-deep(.ant-table-body) {
-      th:last-child,
-      td:last-child {
+      colgroup {
+        col:nth-child(3) {
+          display: none;
+        }
+      }
+      th:nth-child(3),
+      td:nth-child(3) {
         display: none;
       }
     }
