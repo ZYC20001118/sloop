@@ -1,4 +1,5 @@
 const port = process.env.port || process.env.npm_config_port || 33002 // dev port
+const cdn = 'https://cdn.jsdelivr.net/gh/liumingye/cdn/'
 
 process.env.VUE_APP_TITLE = 'ShareList'
 const dayjs = require('dayjs')
@@ -7,7 +8,9 @@ process.env.VUE_APP_UPDATE_TIME = time
 process.env.VUE_APP_VERSION = '0.1'
 
 module.exports = {
-  publicPath: '/',
+  // 如不需要cdn，publicPath使用 '/'
+  // publicPath: '/',
+  publicPath: process.env.NODE_ENV === 'development' ? '/' : cdn,
   outputDir: 'dist',
   lintOnSave: false,
   devServer: {
@@ -35,6 +38,5 @@ module.exports = {
     config.plugins.delete('prefetch')
     // 移除 preload 插件
     config.plugins.delete('preload')
-    config.optimization.runtimeChunk('single')
   }
 }

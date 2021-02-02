@@ -57,7 +57,9 @@ export default {
         data.routes = routes
         resolve()
       }).then(() => {
-        refNav.value.$el.scrollLeft = 999999 // 加载完成后滚动条滚到最右边
+        if (refNav.value != null) {
+          refNav.value.$el.scrollLeft = 999999 // 加载完成后滚动条滚到最右边
+        }
       })
     }
     watch(

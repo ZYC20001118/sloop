@@ -228,9 +228,13 @@ export default {
         })
         .catch(res => {
           console.error(res.response)
-          data.file_list_loading = false
-          data.skipLoad = true
-          router.back()
+          if (res.response.status == 404) {
+            router.push('/404?i=-2')
+          } else {
+            data.file_list_loading = false
+            data.skipLoad = true
+            router.back()
+          }
         })
     }
     /**
