@@ -7,3 +7,16 @@ export const getList = (path, params, cancelToken) => {
     cancelToken: cancelToken
   })
 }
+
+export const auth = (data, cancelToken) => {
+  return request.post({
+    url: location.pathname,
+    data: {
+      act: 'auth',
+      user: data.user,
+      passwd: data.pass,
+      path: location.pathname
+    },
+    cancelToken: cancelToken
+  })
+}

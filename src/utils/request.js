@@ -51,11 +51,11 @@ export default {
         })
     })
   }, // post请求
-  post(param) {
+  post(data) {
     return new Promise((resolve, reject) => {
       axios({
         method: 'post',
-        ...param
+        ...data
       })
         .then(res => {
           resolve(res)

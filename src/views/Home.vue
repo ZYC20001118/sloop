@@ -35,8 +35,8 @@
         </a-table>
       </div>
       <!-- 预览页面 -->
-      <a-spin wrapperClassName="preview-spin" :spinning="file_list_loading" v-show="data.page == 'detail'">
-        <div v-show="data.page == 'detail'" class="preview">
+      <a-spin v-show="data.page == 'detail'" wrapperClassName="preview-spin" :spinning="file_list_loading">
+        <div class="preview">
           <!-- 视频预览 -->
           <div v-show="['video', 'hls'].includes(data.type)" id="video-preview"></div>
           <div v-if="!['video', 'hls'].includes(data.type)" class="warp">
@@ -47,6 +47,29 @@
           </div>
         </div>
       </a-spin>
+      <!-- 授权页面 -->
+      <a-spin v-if="data.page == 'auth'" :spinning="file_list_loading">
+        <div class="auth warp" style="max-width:320px">
+          <a-form layout="vertical" :rules="authRules" :model="auth">
+            <a-form-item>
+              <h2>文档</h2>
+            </a-form-item>
+            <a-form-item name="user">
+              <a-input v-model:value="auth.user" :disabled="authLoading" placeholder="请输入访问账号" size="large">
+                <template #prefix><user-outlined /></template>
+              </a-input>
+            </a-form-item>
+            <a-form-item name="pass">
+              <a-input-password v-model:value="auth.pass" :disabled="authLoading" placeholder="请输入访问密码" size="large">
+                <template #prefix><LockOutlined /></template>
+              </a-input-password>
+            </a-form-item>
+            <a-form-item>
+              <a-button @click="authSubmit" :loading="authLoading" html-type="submit" size="large" type="primary" block>确定</a-button>
+            </a-form-item>
+          </a-form>
+        </div>
+      </a-spin>
       <!-- 自诉文件 -->
       <div v-if="data.readme" class="readme warp">
         <a-card title="README.md">
@@ -55,7 +78,7 @@
       </div>
     </a-layout-content>
     <!-- 页脚 -->
-    <a-layout-footer v-if="data.page == 'list'">
+    <a-layout-footer v-if="data.page != 'detail'">
       <a-row class="warp" type="flex">
         <a-col :flex="1">
           Powered by <a href="https://github.com/reruin/sharelist/" target="_blank">sharelist</a> | Theme by sloop
@@ -73,19 +96,23 @@
 <script>
 import HeadNav from '../components/HeadNav.vue'
 
-import { getList } from '../utils/api'
+import { getList, auth } from '../utils/api'
 import { queryURLparams, JsonParse } from '../utils/base'
 import { byte } from '../utils/format'
 
+import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import { CancelToken } from 'axios'
 import { useRoute, useRouter } from 'vue-router'
 import { reactive, watch, toRefs, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
+import { message } from 'ant-design-vue'
 
 export default {
   components: {
-    HeadNav
+    HeadNav,
+    UserOutlined,
+    LockOutlined
   },
   setup() {
     const route = useRoute()
@@ -130,6 +157,16 @@ export default {
       dplayer: null,
       // 是否跳过加载数据
       skipLoad: false,
+      // 授权页面
+      auth: {
+        user: '',
+        pass: ''
+      },
+      authRules: {
+        user: [{ required: true, message: '', trigger: 'blur' }],
+        pass: [{ required: true, message: '', trigger: 'blur' }]
+      },
+      authLoading: false,
       updateTime: process.env.VUE_APP_UPDATE_TIME
     })
     /**
@@ -212,7 +249,7 @@ export default {
             let json = script[0].innerHTML.substr(9) // 去掉前面的 var data=
             json = JsonParse(json)
             if (json != false) {
-              if (['custom', 'auth'].includes(json.page)) {
+              if (['custom'].includes(json.page)) {
                 window.open(route.fullPath, '_blank') // 自定义页面新窗打开
               } else {
                 data.data = json
@@ -227,7 +264,7 @@ export default {
           data.file_list_loading = false
         })
         .catch(res => {
-          console.error(res.response)
+          console.error(res)
           if (res.response.status == 404) {
             router.push('/404?i=-2')
           } else {
@@ -257,6 +294,39 @@ export default {
         }
       }
     }
+    /**
+     * 授权页面提交
+     */
+    const authSubmit = () => {
+      data.authLoading = true
+      if (data.cancel) {
+        data.cancel('取消请求') // 取消上一次的请求
+      }
+      auth(
+        {
+          user: data.auth.user,
+          pass: data.auth.pass
+        },
+        new CancelToken(c => {
+          data.cancel = c // executor 函数接收一个 cancel 函数作为参数
+        })
+      )
+        .then(res => {
+          var resd = res.data
+          console.log(resd)
+          if (resd.status == 0) {
+            updateFileList()
+          } else {
+            message.error(resd.message)
+            data.authLoading = false
+          }
+        })
+        .catch(res => {
+          console.error(res)
+          data.authLoading = false
+        })
+    }
+
     /**
      * 时间格式化
      */
@@ -289,7 +359,8 @@ export default {
     return {
       ...toRefs(data),
       customRow,
-      parseDate2Str
+      parseDate2Str,
+      authSubmit
     }
   }
 }
@@ -376,6 +447,12 @@ export default {
         height: 100%;
       }
     }
+  }
+}
+.auth {
+  margin: 10% auto;
+  ::deep(.ant-form-item) {
+    padding-bottom: 0;
   }
 }
 footer {

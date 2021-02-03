@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import App from './App'
 import router from './router'
 
-import { Layout, Row, Col, Breadcrumb, Table, Result, Button, Card, BackTop, Spin, Image } from 'ant-design-vue'
+import { Layout, Row, Col, Breadcrumb, Table, Result, Button, Card, BackTop, Spin, Image, Input, Form } from 'ant-design-vue'
 import { createFromIconfontCN } from '@ant-design/icons-vue'
 
 createApp(App)
@@ -18,6 +18,8 @@ createApp(App)
   .use(BackTop)
   .use(Spin)
   .use(Image)
+  .use(Input)
+  .use(Form)
   .mount('#app')
 
 createFromIconfontCN({
