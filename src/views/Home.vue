@@ -224,7 +224,7 @@ export default {
           })
         } else if (_data.type == 'word' || _data.type == 'doc') {
           _data.purl = 'https://view.officeapps.live.com/op/view.aspx?src=' + location.origin + location.pathname
-          _data.purl = 'https://view.officeapps.live.com/op/view.aspx?src=https://pan.liumingye.cn/' + location.pathname
+          // _data.purl = 'https://view.officeapps.live.com/op/view.aspx?src=https://pan.liumingye.cn/' + location.pathname
         }
       }
     }
