@@ -115,6 +115,9 @@ export default {
         margin: 0 4px;
       }
     }
+    a{
+      display: inline-block;
+    }
   }
   .extra {
     a {

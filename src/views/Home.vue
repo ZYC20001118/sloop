@@ -38,24 +38,28 @@
       <a-spin v-show="data.page == 'detail'" wrapperClassName="preview-spin" :spinning="file_list_loading">
         <div class="preview">
           <!-- 视频预览 -->
-          <div v-show="['video', 'hls'].includes(data.type)" id="video-preview"></div>
-          <div v-if="!['video', 'hls'].includes(data.type)" class="warp">
+          <div v-show="data.type == 'video'" id="video-preview"></div>
+          <div v-if="data.type != 'video'" class="warp">
+            <!-- 文本预览 -->
+            <div v-if="['txt', 'md'].includes(data.ext)" v-html="data.body"></div>
             <!-- 图片预览 -->
-            <a-image v-if="data.type == 'image'" :src="data.url" />
+            <a-image v-else-if="data.type == 'image'" :src="data.url" />
             <!-- 音频预览 -->
-            <audio v-if="data.type == 'audio'" :src="data.url" controls autoplay />
+            <audio v-else-if="data.type == 'audio'" :src="data.url" controls autoplay />
+            <!-- 文档预览 -->
+            <iframe v-else-if="['word', 'doc'].includes(data.type)" frameborder="0" :src="data.purl"></iframe>
           </div>
         </div>
       </a-spin>
       <!-- 授权页面 -->
       <a-spin v-if="data.page == 'auth'" :spinning="file_list_loading">
         <div class="auth warp" style="max-width:320px">
-          <a-form layout="vertical" :rules="authRules" :model="auth">
+          <a-form layout="vertical" ref="authForm" :rules="authRules" :model="auth">
             <a-form-item>
-              <h2>文档</h2>
+              <h2>{{ data.name }}</h2>
             </a-form-item>
             <a-form-item name="user">
-              <a-input v-model:value="auth.user" :disabled="authLoading" placeholder="请输入访问账号" size="large">
+              <a-input v-model:value="auth.user" :disabled="authLoading" placeholder="请输入访问账号" size="large" autofocus>
                 <template #prefix><user-outlined /></template>
               </a-input>
             </a-form-item>
@@ -103,7 +107,7 @@ import { byte } from '../utils/format'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import { CancelToken } from 'axios'
 import { useRoute, useRouter } from 'vue-router'
-import { reactive, watch, toRefs, onMounted } from 'vue'
+import { reactive, watch, toRefs, onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import { message } from 'ant-design-vue'
@@ -174,14 +178,15 @@ export default {
      */
     const renderPage = () => {
       console.log('====renderPage====渲染页面====')
+      let _data = data.data
       // 销毁播放器
       if (data.dplayer) {
         data.dplayer.destroy()
       }
       // 列表最前加入..文件夹
-      if (data.data.parent) {
-        data.data.list.unshift({
-          href: data.data.parent,
+      if (_data.parent) {
+        _data.list.unshift({
+          href: _data.parent,
           type: 'level-up',
           _size: 0,
           updated_at: '',
@@ -189,34 +194,37 @@ export default {
         })
       }
       // 设置标题
-      let title = data.data.title || 'ShareList'
-      if (data.data.subtitle) {
-        title = `${data.data.subtitle} - ${title}`
+      let title = _data.title || 'ShareList'
+      if (_data.subtitle) {
+        title = `${_data.subtitle} - ${title}`
       }
       document.title = title
-      if (data.data.page == 'list') {
-        data.data.list = data.data.list.map(item => {
+      if (_data.page == 'list') {
+        _data.list = _data.list.map(item => {
           item.size = byte(item._size)
           if (item.size == '0 B') {
             item.size = ''
           }
           return item
         })
-      } else if (data.data.page == 'detail') {
+      } else if (_data.page == 'detail') {
         // 预览视频
-        if (['video', 'hls'].includes(data.data.type)) {
+        if (_data.type == 'video' || _data.ext == 'hls') {
           var type = 'auto'
-          if (data.data.type == 'hls') {
+          if (_data.ext == 'hls') {
             type = 'hls'
           }
           data.dplayer = new window.DPlayer({
             container: document.getElementById('video-preview'),
             video: {
-              url: data.data.url,
+              url: _data.url,
               type: type
             },
             autoplay: true
           })
+        } else if (_data.type == 'word' || _data.type == 'doc') {
+          _data.purl = 'https://view.officeapps.live.com/op/view.aspx?src=' + location.origin + location.pathname
+          _data.purl = 'https://view.officeapps.live.com/op/view.aspx?src=https://pan.liumingye.cn/' + location.pathname
         }
       }
     }
@@ -249,8 +257,14 @@ export default {
             let json = script[0].innerHTML.substr(9) // 去掉前面的 var data=
             json = JsonParse(json)
             if (json != false) {
+              // 授权页面 初始化表单
+              if (json.page == 'auth') {
+                data.auth.user = data.auth.pass = ''
+                data.authLoading = false
+              }
+              // 自定义页面新窗打开
               if (['custom'].includes(json.page)) {
-                window.open(route.fullPath, '_blank') // 自定义页面新窗打开
+                window.open(route.fullPath, '_blank')
               } else {
                 data.data = json
                 renderPage() // 渲染页面
@@ -265,9 +279,9 @@ export default {
         })
         .catch(res => {
           console.error(res)
-          if (res.response.status == 404) {
+          if (res.response && res.response.status == 404) {
             router.push('/404?i=-2')
-          } else {
+          } else if (!res.__CANCEL__) {
             data.file_list_loading = false
             data.skipLoad = true
             router.back()
@@ -279,7 +293,7 @@ export default {
      */
     const customRow = record => {
       return {
-        // 点击行
+        // 点击事件
         onClick: () => {
           if (record.type == 'folder' || record.type == 'level-up' || Object.prototype.hasOwnProperty.call(queryURLparams(record.href), 'preview')) {
             router.push(record.href)
@@ -288,6 +302,7 @@ export default {
           }
         },
         onMouseDown: event => {
+          // 鼠标中键 新窗打开
           if (event.button == 1) {
             window.open(record.href, '_blank')
           }
@@ -295,38 +310,44 @@ export default {
       }
     }
     /**
-     * 授权页面提交
+     * 授权页面
      */
+    const authForm = ref(null)
     const authSubmit = () => {
-      data.authLoading = true
-      if (data.cancel) {
-        data.cancel('取消请求') // 取消上一次的请求
-      }
-      auth(
-        {
-          user: data.auth.user,
-          pass: data.auth.pass
-        },
-        new CancelToken(c => {
-          data.cancel = c // executor 函数接收一个 cancel 函数作为参数
-        })
-      )
-        .then(res => {
-          var resd = res.data
-          console.log(resd)
-          if (resd.status == 0) {
-            updateFileList()
-          } else {
-            message.error(resd.message)
-            data.authLoading = false
+      authForm.value
+        .validate()
+        .then(() => {
+          data.authLoading = true
+          if (data.cancel) {
+            data.cancel('取消请求')
           }
+          auth(
+            {
+              user: data.auth.user,
+              pass: data.auth.pass
+            },
+            new CancelToken(c => {
+              data.cancel = c
+            })
+          )
+            .then(res => {
+              var r = res.data
+              if (r.status == 0) {
+                updateFileList()
+              } else {
+                message.error(r.message)
+                data.authLoading = false
+              }
+            })
+            .catch(res => {
+              console.error(res)
+              data.authLoading = false
+            })
         })
-        .catch(res => {
-          console.error(res)
-          data.authLoading = false
+        .catch(() => {
+          message.info('请输入账号密码')
         })
     }
-
     /**
      * 时间格式化
      */
@@ -360,6 +381,7 @@ export default {
       ...toRefs(data),
       customRow,
       parseDate2Str,
+      authForm,
       authSubmit
     }
   }
@@ -435,12 +457,21 @@ export default {
       .warp {
         padding: 15px;
         text-align: center;
+        height: 100%;
+        iframe {
+          height: 100%;
+          width: 100%;
+          background: #f5f5f5;
+        }
         img {
           max-width: 100%;
         }
         audio {
           width: 100%;
           outline: none;
+        }
+        .markdown-body{
+          padding:0 0 16px !important;
         }
       }
       #video-preview {
@@ -451,8 +482,8 @@ export default {
 }
 .auth {
   margin: 10% auto;
-  ::deep(.ant-form-item) {
-    padding-bottom: 0;
+  ::v-deep(.ant-form-item) {
+    margin-bottom: 10px;
   }
 }
 footer {

@@ -9,6 +9,7 @@ block content
     - if(subtitle){json.subtitle=subtitle}
     - if(readme){json.readme=readme}
     - if(parent){json.parent=parent}
+    - if(!parent){json.readme="我今天就是要带她走，我看哪个敢拦我。"}
     - json.page='list'
     - json.title=_config_('title')
     !=JSON.stringify(json)

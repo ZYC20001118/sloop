@@ -31,7 +31,7 @@ html
         button.sl-button.btn-primary(type="button",@click="checkAuth",:disabled="isAble")= __('ok')
 
   script
-    | var data={"title":"#{_config_('title')}","page":"auth","user":null,"passwd":null,"isAble":false}
+    | var data={"title":"#{_config_('title')}","page":"auth","name":"#{name}","user":null,"passwd":null,"isAble":false}
 
   script(src='https://cdn.bootcss.com/axios/0.21.1/axios.min.js')
   script(src='https://cdn.bootcss.com/vue/2.6.12/vue.min.js')
