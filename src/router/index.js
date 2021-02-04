@@ -6,24 +6,23 @@ const router = createRouter({
     {
       path: '/',
       name: 'Index',
-      component: () => import('../views/Home'),
+      component: () => import('@/views/Home'),
       children: [
         {
           path: ':path(.*)',
           name: 'Index',
-          component: () => import('../views/Home')
+          component: () => import('@/views/Home')
         }
       ]
     },
     {
       path: '/404',
       name: 'ErrorPage404',
-      component: () => import('../views/ErrorPage404')
+      component: () => import('@/views/ErrorPage404')
     },
     {
       path: '/:catchAll(.*)',
-      redirect: '/404',
-      hidden: true
+      redirect: '/404'
     }
   ]
 })

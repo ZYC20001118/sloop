@@ -21,8 +21,7 @@
 </template>
 
 <script>
-import { reactive, toRefs, watch, ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { reactive, toRefs, watchEffect, ref } from 'vue'
 
 export default {
   name: 'HeadNav',
@@ -30,21 +29,20 @@ export default {
     data: Object
   },
   setup(props) {
-    const route = useRoute()
     const data = reactive({
+      data: props.data,
       routes: []
     })
     const refNav = ref(0)
     const init = () => {
       new Promise(resolve => {
-        data.data = props.data
-        const paths = location.pathname.substr(1).split('/')
-        let routes = [
+        const routes = [
           {
             path: '/',
             breadcrumbName: data.data.title
           }
         ]
+        const paths = location.pathname.substr(1).split('/')
         paths.map(val => {
           if (val == '') {
             return false
@@ -58,17 +56,13 @@ export default {
         resolve()
       }).then(() => {
         if (refNav.value != null) {
-          refNav.value.$el.scrollLeft = 999999 // 加载完成后滚动条滚到最右边
+          refNav.value.$el.scrollLeft = refNav.value.$el.scrollWidth // 加载完成后滚动条滚到最右边
         }
       })
     }
-    watch(
-      () => route.path,
-      () => {
-        init()
-      }
-    )
-    onMounted(() => {
+    // 监听变化
+    watchEffect(() => {
+      data.data = props.data
       init()
     })
     return {
@@ -115,11 +109,12 @@ export default {
         margin: 0 4px;
       }
     }
-    a{
+    a {
       display: inline-block;
     }
   }
   .extra {
+    margin-left: 8px;
     a {
       margin-left: 8px;
       svg {

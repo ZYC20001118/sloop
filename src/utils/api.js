@@ -8,13 +8,13 @@ export const getList = (path, params, cancelToken) => {
   })
 }
 
-export const auth = (data, cancelToken) => {
+export const auth = ({ user, pass }, cancelToken) => {
   return request.post({
     url: location.pathname,
     data: {
       act: 'auth',
-      user: data.user,
-      passwd: data.pass,
+      user: user,
+      passwd: pass,
       path: location.pathname
     },
     cancelToken: cancelToken

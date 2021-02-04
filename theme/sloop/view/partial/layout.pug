@@ -1,5 +1,7 @@
 - var cdn = 'https://cdn.jsdelivr.net/gh/liumingye/cdn@4.m/'
 
+- var json = {}
+
 if(base_url)
   - var url = base_url.replace(/\/+$/g, '')
   - var subtitle = decodeURI(url.substring(url.lastIndexOf("\/") + 1, url.length))
@@ -21,7 +23,6 @@ if(data)
   -   }
   -   data[x].href = decodeURI(data[x].href)
   - }
-  - var json = {}
 
 doctype html
 html

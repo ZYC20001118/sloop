@@ -14,11 +14,12 @@ block content
     - json.type=data.type
     - json.ext=data.ext
     - if(['txt','md'].includes(data.ext)){
-    -   json.body = data.body
+    -   json.body=data.body
     - }
     - var ext = extname(data.name)
     - if (['m3u8'].includes(ext)){
-    -   data.type = 'video'
+    -   json.type='video'
+    -   json.ext='hls'
     - }
     - json.url=url ? url : data.url
     !=JSON.stringify(json)

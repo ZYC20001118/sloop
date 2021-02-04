@@ -4,7 +4,7 @@
       <a-button v-if="backNum" type="primary" @click="router.go(backNum)">
         返回上一页
       </a-button>
-      <a-button type="primary" @click="router.push('/')">
+      <a-button type="primary" @click="router.push({ name: 'Index' })">
         返回首页
       </a-button>
     </template>
