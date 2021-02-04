@@ -1,7 +1,7 @@
 <template>
   <a-spin :spinning="spinLoading">
     <div class="custom">
-      <div class="body" v-html="data.body"></div>
+      <div class="body" v-html="decodeURI(data.body)"></div>
     </div>
   </a-spin>
 </template>
@@ -33,10 +33,15 @@ export default {
 
 <style scoped lang="less">
 .custom {
+  display: block;
   padding: 0 15px;
   max-width: 350px;
   margin: 10% auto;
   ::v-deep(.body) {
+    // 挂载向导 样式
+    .auth {
+      width: 100%;
+    }
     h3 {
       font-size: 16px;
       color: #666;

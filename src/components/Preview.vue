@@ -11,7 +11,7 @@
         <!-- 音频预览 -->
         <audio v-else-if="data.type == 'audio'" :src="data.url" controls autoplay />
         <!-- 文档预览 -->
-        <iframe v-else-if="['word', 'doc'].includes(data.type)" frameborder="0" :src="data.purl"></iframe>
+        <iframe v-else-if="['word', 'doc', 'pdf'].includes(data.type)" frameborder="0" :src="data.purl"></iframe>
       </div>
     </div>
   </a-spin>
@@ -51,9 +51,11 @@ export default {
           autoplay: true
         })
       } else if (['word', 'doc'].includes(_data.type)) {
-        data.data.purl = `https://view.officeapps.live.com/op/view.aspx?src=${location.origin}${location.pathname}` // src里不能带&，只能用直连302代替
-        // data.data.purl = `https://view.officeapps.live.com/op/view.aspx?src=https://pan.liumingye.cn/${location.pathname}`
+        _data.purl = `https://view.officeapps.live.com/op/view.aspx?src=${location.origin}${location.pathname}` // src里不能带&，只能用直连302代替
+      } else if (['pdf'].includes(_data.type)) {
+        _data.purl = `http://liumingye.gitee.io/pdf/?file=${encodeURIComponent(`${location.origin}${location.pathname}?preview=1&proxy=1`)}`
       }
+      data.data = _data
     })
     return {
       ...toRefs(data)
