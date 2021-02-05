@@ -10,7 +10,7 @@ block content
     | var data=
     - json.page='custom'
     - json.title=_config_('title')
-    - json.body=body
+    - json.body=encodeURI(body)
     !=JSON.stringify(json)
 
   include script

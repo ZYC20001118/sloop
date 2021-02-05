@@ -53,7 +53,7 @@ export default {
       } else if (['word', 'doc'].includes(_data.type)) {
         _data.purl = `https://view.officeapps.live.com/op/view.aspx?src=${location.origin}${location.pathname}` // src里不能带&，只能用直连302代替
       } else if (['pdf'].includes(_data.type)) {
-        _data.purl = `http://liumingye.gitee.io/pdf/?file=${encodeURIComponent(`${location.origin}${location.pathname}?preview=1&proxy=1`)}`
+        _data.purl = `//liumingye.gitee.io/pdf/?file=${encodeURIComponent(`//${location.host}${location.pathname}?preview=1&proxy=1`)}`
       }
       data.data = _data
     })

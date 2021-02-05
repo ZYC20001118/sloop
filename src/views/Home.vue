@@ -204,12 +204,7 @@ export default {
         .catch(res => {
           console.error(res)
           if (res.response && res.response.status == 404) {
-            router.push({
-              name: 'ErrorPage404',
-              params: {
-                i: '-2'
-              }
-            })
+            router.replace({ name: 'ErrorPage404' })
           } else if (!res.__CANCEL__) {
             data.listLoading = false
             data.skipLoad = true
@@ -267,9 +262,7 @@ export default {
     })
     // 404 跳转
     if (data.data.length == 0 && process.env.NODE_ENV !== 'development') {
-      router.push({
-        name: 'ErrorPage404'
-      })
+      router.replace({ name: 'ErrorPage404' })
     }
     return {
       ...toRefs(data),

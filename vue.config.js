@@ -1,11 +1,10 @@
 const port = process.env.port || process.env.npm_config_port || 33002 // dev port
 const cdn = 'https://cdn.jsdelivr.net/gh/liumingye/cdn/'
 
-process.env.VUE_APP_TITLE = 'ShareList'
 const dayjs = require('dayjs')
 const time = dayjs().format('YYYY-M-D HH:mm:ss')
 process.env.VUE_APP_UPDATE_TIME = time
-process.env.VUE_APP_VERSION = '0.1'
+process.env.VUE_APP_TITLE = 'ShareList'
 
 module.exports = {
   // 如不需要cdn，publicPath使用 '/'
@@ -18,7 +17,7 @@ module.exports = {
     open: true,
     overlay: {
       warnings: false,
-      errors: true
+      errors: true,
     },
     // 前端配置代理访问后端
     proxy: {
@@ -27,10 +26,10 @@ module.exports = {
         ws: true,
         changeOrigin: true,
         pathRewrite: {
-          ['^/api']: ''
-        }
-      }
-    }
+          ['^/api']: '',
+        },
+      },
+    },
   },
   productionSourceMap: false,
   chainWebpack(config) {
@@ -38,5 +37,5 @@ module.exports = {
     config.plugins.delete('prefetch')
     // 移除 preload 插件
     config.plugins.delete('preload')
-  }
+  },
 }
